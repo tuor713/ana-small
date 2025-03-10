@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Message, SqlQueryResult, JavaScriptExecutionResult, RedshiftCredentials } from './types';
 import { useSettings } from './hooks/useSettings';
 import { useChats } from './hooks/useChats';
+import { useUserWarehouses } from './hooks/useUserWarehouses';
 import { sendChatRequest } from './services/openai';
 import { executeSqlQuery } from './services/redshift';
 import { executeJavaScript } from './services/jsExecutor';
@@ -15,7 +16,7 @@ function App() {
   const { 
     chats, 
     activeChat, 
-    isLoaded,
+    isLoaded: chatsLoaded,
     createChat, 
     deleteChat, 
     switchChat, 
@@ -23,6 +24,15 @@ function App() {
     updateChatTitle,
     updateChatConnector
   } = useChats();
+
+  const {
+    warehouses,
+    isLoaded: warehousesLoaded,
+    addWarehouse,
+    updateWarehouse,
+    deleteWarehouse,
+    getWarehouse
+  } = useUserWarehouses();
   
   const [isLoading, setIsLoading] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -76,14 +86,19 @@ function App() {
   };
 
   const handleWarehouseSelect = (id: string, credentials?: RedshiftCredentials) => {
-    if (id === 'USER-1' && credentials) {
-      // Update the stored credentials when selecting a user warehouse
-      setSettings({ redshiftCredentials: credentials });
-    }
-    if (activeChat) {
-      updateChatConnector(activeChat.id, id);
+    if (credentials) {
+      const warehouse = addWarehouse(credentials);
+      if (activeChat) {
+        updateChatConnector(activeChat.id, warehouse.id);
+      } else {
+        createChat(warehouse.id);
+      }
     } else {
-      createChat(id);
+      if (activeChat) {
+        updateChatConnector(activeChat.id, id);
+      } else {
+        createChat(id);
+      }
     }
   };
 
@@ -111,7 +126,8 @@ function App() {
         settings.systemPrompt, 
         settings.openaiApiKey, 
         signal,
-        activeChat.connectorId
+        activeChat.connectorId,
+        warehouses
       );
       
       if (signal.aborted) {
@@ -173,8 +189,9 @@ function App() {
           }
           
           let credentials: RedshiftCredentials | { id: string } | null;
-          if (activeChat.connectorId === 'USER-1') {
-            credentials = settings.redshiftCredentials;
+          if (activeChat.connectorId.startsWith('USER-')) {
+            const userWarehouse = getWarehouse(activeChat.connectorId);
+            credentials = userWarehouse || null;
           } else {
             credentials = { id: activeChat.connectorId };
           }
@@ -185,15 +202,12 @@ function App() {
             throw new Error('Operation cancelled by user');
           }
           
-          const resultContent = result.error 
-            ? `Error: ${result.error}` 
-            : formatSqlResultAsTable(result);
-          
           const toolResponseMessage: Message = {
             role: 'tool',
             tool_call_id: toolCall.id,
             name: 'exec-sql',
-            content: resultContent
+            content: result.error ? `Error: ${result.error}` : formatSqlResultAsTable(result),
+            result // Store the full result object in the message
           };
           
           const updatedMessages = currentHistory.filter(msg => msg !== executingMessage).concat(toolResponseMessage);
@@ -206,11 +220,17 @@ function App() {
           }
           
           console.error('Error executing SQL:', error);
+          const errorResult: SqlQueryResult = {
+            columns: [],
+            rows: [],
+            error: error instanceof Error ? error.message : 'Unknown error'
+          };
           const errorToolResponse: Message = {
             role: 'tool',
             tool_call_id: toolCall.id,
             name: 'exec-sql',
-            content: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`
+            content: `Error: ${errorResult.error}`,
+            result: errorResult
           };
           const updatedMessages = [...currentHistory, errorToolResponse];
           updateMessages(updatedMessages);
@@ -305,7 +325,14 @@ function App() {
     }
     
     try {
-      const nextResponse = await sendChatRequest(currentHistory, settings.systemPrompt, apiKey, signal);
+      const nextResponse = await sendChatRequest(
+        currentHistory, 
+        settings.systemPrompt, 
+        apiKey, 
+        signal,
+        activeChat.connectorId,
+        warehouses
+      );
       
       if (signal.aborted) {
         throw new Error('Operation cancelled by user');
@@ -331,12 +358,12 @@ function App() {
     }
   };
 
-  if (!isLoaded) {
+  if (!chatsLoaded || !warehousesLoaded) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto"></div>
-          <p className="mt-4">Loading chats...</p>
+          <p className="mt-4">Loading...</p>
         </div>
       </div>
     );
@@ -354,9 +381,11 @@ function App() {
           messages={activeChat?.messages || []} 
           isLoading={isLoading}
           onSendMessage={sendMessage}
-          userCredentials={settings.redshiftCredentials.host ? settings.redshiftCredentials : null}
+          userWarehouses={warehouses}
           selectedWarehouseId={activeChat?.connectorId || 'SAMPLE-1'}
           onWarehouseSelect={handleWarehouseSelect}
+          onWarehouseUpdate={updateWarehouse}
+          onWarehouseDelete={deleteWarehouse}
           onStopChat={stopChat}
           showInput={activeChat?.messages.length > 0}
         />

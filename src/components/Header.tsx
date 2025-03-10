@@ -22,7 +22,7 @@ const Header: React.FC<HeaderProps> = ({ onOpenChatHistory, onNewChat }) => {
           <img src={logo} alt="Ana Logo" className="w-8 h-8" />
           <div className="flex flex-col ml-3">
             <h1 className="font-system text-2xl font-bold text-gray-700">Ana</h1>
-            <span className="ana-badge ana-badge-blue font-system">Small</span>
+            <span className="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs font-normal">Small</span>
           </div>
         </button>
         
@@ -62,8 +62,7 @@ const Header: React.FC<HeaderProps> = ({ onOpenChatHistory, onNewChat }) => {
         {isMobileMenuOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-50 z-50 md:hidden">
             <div className="absolute right-0 top-0 h-full w-64 bg-white shadow-lg">
-              <div className="p-4 border-b border-ana-gray-border-light flex justify-between items-center">
-                <h2 className="font-system text-base font-light">Menu</h2>
+              <div className="p-4 border-b border-ana-gray-border-light flex justify-end">
                 <button
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="p-2 hover:bg-gray-100 rounded-full"

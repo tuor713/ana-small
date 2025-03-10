@@ -4,6 +4,7 @@ export interface Message {
   tool_calls?: ToolCallRequest[];
   tool_call_id?: string;
   name?: string;
+  result?: SqlQueryResult; // Add this to store the full result
 }
 
 export interface ToolCallRequest {
@@ -16,15 +17,22 @@ export interface ToolCallRequest {
 }
 
 export interface RedshiftCredentials {
-  id?: string;
-  name?: string;
-  description?: string;
   host: string;
   port: number;
   database: string;
   user: string;
   password: string;
   schema: string;
+  name?: string;
+  description?: string;
+}
+
+export interface UserWarehouse extends RedshiftCredentials {
+  id: string;
+  name: string;
+  description: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface AppSettings {
@@ -53,7 +61,7 @@ export interface Chat {
   createdAt: string;
   updatedAt: string;
   messages: Message[];
-  connectorId: string; // Either 'SAMPLE-1', 'SAMPLE-2', or 'USER-1'
+  connectorId: string;
 }
 
 export interface JavaScriptExecutionResult {

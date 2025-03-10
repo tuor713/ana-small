@@ -69,7 +69,8 @@ export async function sendChatRequest(
   systemPrompt: string,
   apiKey: string | null,
   signal?: AbortSignal,
-  connectorId?: string
+  connectorId?: string,
+  userWarehouses?: { id: string; name: string; description: string; schema: string; }[]
 ): Promise<Message> {
   const finalSystemPrompt = systemPrompt || DEFAULT_SYSTEM_PROMPT;
   
@@ -83,8 +84,11 @@ export async function sendChatRequest(
     const sampleWarehouse = SAMPLE_WAREHOUSES.find(w => w.id === connectorId);
     if (sampleWarehouse) {
       warehouseContext = `\n\nYou are working with "${sampleWarehouse.name}" (${sampleWarehouse.description}). USE THIS SCHEMA WHEN MAKING QUERIES: "${sampleWarehouse.schema}".`;
-    } else if (connectorId === 'USER-1') {
-      warehouseContext = `\n\nYou are working with a user-provided Redshift warehouse.`;
+    } else if (connectorId.startsWith('USER-')) {
+      const userWarehouse = userWarehouses?.find(w => w.id === connectorId);
+      if (userWarehouse) {
+        warehouseContext = `\n\nYou are working with "${userWarehouse.name}" (${userWarehouse.description}). USE THIS SCHEMA WHEN MAKING QUERIES: "${userWarehouse.schema}".`;
+      }
     }
   }
 

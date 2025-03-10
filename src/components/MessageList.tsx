@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { Message, RedshiftCredentials } from '../types';
+import { Message, RedshiftCredentials, UserWarehouse } from '../types';
 import MarkdownTable from './MarkdownTable';
 import VisualizationContainer from './visualizations/VisualizationContainer';
 import EmptyStateSelector from './EmptyStateSelector';
@@ -9,9 +9,11 @@ interface MessageListProps {
   messages: Message[];
   isLoading: boolean;
   onSendMessage: (content: string) => void;
-  userCredentials: RedshiftCredentials | null;
+  userWarehouses: UserWarehouse[];
   selectedWarehouseId: string;
   onWarehouseSelect: (id: string, credentials?: RedshiftCredentials) => void;
+  onWarehouseUpdate: (id: string, updates: Partial<RedshiftCredentials>) => void;
+  onWarehouseDelete: (id: string) => void;
   onStopChat: () => void;
   showInput?: boolean;
 }
@@ -20,9 +22,11 @@ const MessageList: React.FC<MessageListProps> = ({
   messages, 
   isLoading,
   onSendMessage,
-  userCredentials,
+  userWarehouses,
   selectedWarehouseId,
   onWarehouseSelect,
+  onWarehouseUpdate,
+  onWarehouseDelete,
   onStopChat,
   showInput = true
 }) => {
@@ -37,9 +41,11 @@ const MessageList: React.FC<MessageListProps> = ({
       {messages.length === 0 ? (
         <EmptyStateSelector
           onQuerySelect={onSendMessage}
-          userCredentials={userCredentials}
+          userWarehouses={userWarehouses}
           selectedWarehouseId={selectedWarehouseId}
           onWarehouseSelect={onWarehouseSelect}
+          onWarehouseUpdate={onWarehouseUpdate}
+          onWarehouseDelete={onWarehouseDelete}
           isLoading={isLoading}
           onStopChat={onStopChat}
         />
@@ -52,7 +58,7 @@ const MessageList: React.FC<MessageListProps> = ({
                 className={`mb-4 p-3 border border-black w-full ${
                   message.role === 'user' ? 'bg-gray-100' : 
                   message.role === 'system' ? 'bg-gray-50 border-dashed' : 
-                  message.role === 'tool' ? 'bg-blue-50 border-dashed' :
+                  message.role === 'tool' ? (message.result?.error ? 'bg-red-100 border-dashed' : 'bg-blue-50 border-dashed') :
                   'bg-white'
                 }`}
               >

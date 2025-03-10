@@ -103,7 +103,7 @@ export default {
           '@apply p-4 border border-gray-300 hover:border-black transition-colors': {}
         },
         '.ana-badge': {
-          '@apply px-2 py-0.5 text-xs font-normal rounded': {}
+          '@apply px-2 py-0.5 text-xs font-normal': {}
         },
         '.ana-badge-blue': {
           '@apply bg-blue-100 text-blue-800': {}
