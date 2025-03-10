@@ -80,9 +80,9 @@ const EmptyStateSelector: React.FC<EmptyStateSelectorProps> = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-start px-4 pt-24 relative">
-      <div className="w-full max-w-xl">
-        <div className="mb-16">
+    <div className="flex-1 flex items-center justify-center">
+      <div className="w-full max-w-xl px-4">
+        <div className="mb-8">
           <h1 className="font-system text-sm text-gray-500 mb-2">
             Data Warehouse
           </h1>
@@ -173,7 +173,7 @@ const EmptyStateSelector: React.FC<EmptyStateSelectorProps> = ({
         </div>
 
         {isSampleWarehouse && suggestedQueries.length > 0 && (
-          <div className="mb-16">
+          <div className="mb-8">
             <h2 className="font-system text-sm text-gray-500 mb-2">
               Suggested Analyses
             </h2>
@@ -198,9 +198,7 @@ const EmptyStateSelector: React.FC<EmptyStateSelectorProps> = ({
             </div>
           </div>
         )}
-      </div>
 
-      <div className="w-full max-w-4xl">
         <MessageInput
           onSendMessage={onQuerySelect}
           isLoading={isLoading}

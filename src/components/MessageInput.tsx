@@ -29,9 +29,6 @@ const MessageInput: React.FC<MessageInputProps> = ({
     const maxHeight = variant === 'landing' ? lineHeight * 6 : lineHeight * 10;
     const newHeight = Math.min(textarea.scrollHeight, maxHeight);
     textarea.style.height = `${newHeight}px`;
-
-    const totalHeight = newHeight + 32;
-    container.style.height = `${totalHeight}px`;
   };
 
   useEffect(() => {
@@ -49,7 +46,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
     return (
       <div 
         ref={containerRef}
-        className="w-full bg-white mt-4"
+        className="w-full bg-white"
       >
         <div className="flex gap-2">
           <textarea
@@ -62,7 +59,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
                 handleSend();
               }
             }}
-            placeholder="Ask a question about your data..."
+            placeholder="Ask a question about this dataset..."
             className="flex-grow px-4 py-3 border border-black resize-none min-h-[48px] overflow-y-auto focus:outline-none focus:ring-1 focus:ring-black transition-colors font-system scrollbar-hide"
             style={{ lineHeight: '1.5' }}
             disabled={isLoading}
@@ -71,7 +68,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
           <button
             onClick={isLoading ? onStopChat : handleSend}
             disabled={isLoading ? false : !input.trim()}
-            className={`px-6 flex items-center justify-center ${
+            className={`w-[48px] h-[48px] flex-shrink-0 flex items-center justify-center ${
               isLoading 
                 ? 'bg-red-500 text-white border border-red-500' 
                 : 'bg-black text-white border border-black disabled:bg-gray-300 disabled:border-gray-300'
@@ -87,11 +84,10 @@ const MessageInput: React.FC<MessageInputProps> = ({
   return (
     <div 
       ref={containerRef}
-      className="sticky bottom-0 bg-white border-t border-black"
-      style={{ height: '72px' }}
+      className="fixed bottom-0 left-0 right-0 bg-white border-t border-black"
     >
-      <div className="absolute bottom-0 left-0 right-0 p-4">
-        <div className="flex gap-2">
+      <div className="container mx-auto max-w-4xl px-4">
+        <div className="flex gap-2 py-4">
           <textarea
             ref={textareaRef}
             value={input}
@@ -103,7 +99,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
               }
             }}
             placeholder="Type your message..."
-            className="flex-grow px-3 py-1.5 border border-black resize-none min-h-[40px] overflow-y-auto font-system scrollbar-hide"
+            className="flex-grow px-3 py-1.5 border border-black resize-none min-h-[40px] max-h-[300px] overflow-y-auto font-system scrollbar-hide"
             style={{ lineHeight: '1.5' }}
             disabled={isLoading}
             rows={1}
@@ -111,7 +107,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
           <button
             onClick={isLoading ? onStopChat : handleSend}
             disabled={isLoading ? false : !input.trim()}
-            className={`px-6 flex items-center justify-center ${
+            className={`w-[40px] h-[40px] flex-shrink-0 flex items-center justify-center ${
               isLoading 
                 ? 'bg-red-500 text-white border border-red-500' 
                 : 'bg-black text-white border border-black disabled:bg-gray-300 disabled:border-gray-300'

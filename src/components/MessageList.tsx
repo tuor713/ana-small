@@ -51,7 +51,7 @@ const MessageList: React.FC<MessageListProps> = ({
         />
       ) : (
         <>
-          <div className="p-4 flex-1">
+          <div className="p-4 pb-[80px] flex-1">
             {messages.map((message, index) => (
               <div 
                 key={index} 
@@ -250,7 +250,7 @@ function processTextWithTables(text: string, keyPrefix: number): React.ReactNode
         <MarkdownTable tableContent={tableLines.join('\n')} />
       </div>
     );
-  } else if ( tableLines.length > 0) {
+  } else if (tableLines.length > 0) {
     textBuffer += tableLines.join('\n');
   }
   
