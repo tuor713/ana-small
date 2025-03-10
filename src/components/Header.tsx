@@ -35,18 +35,18 @@ const Header: React.FC<HeaderProps> = ({ onOpenChatHistory, onNewChat }) => {
             <span className="font-system text-base font-normal">Compare Ana for Enterprise</span>
           </button>
           <button
-            onClick={onNewChat}
-            className="p-2 border border-gray-300 hover:border-black transition-colors"
-            title="New Chat"
-          >
-            <Home size={20} className="text-gray-700" />
-          </button>
-          <button
             onClick={onOpenChatHistory}
             className="p-2 border border-gray-300 hover:border-black transition-colors"
             title="Chat History"
           >
             <MessageSquare size={20} className="text-gray-700" />
+          </button>
+          <button
+            onClick={onNewChat}
+            className="p-2 border border-gray-300 hover:border-black transition-colors"
+            title="New Chat"
+          >
+            <Home size={20} className="text-gray-700" />
           </button>
         </div>
 
@@ -74,16 +74,6 @@ const Header: React.FC<HeaderProps> = ({ onOpenChatHistory, onNewChat }) => {
               <div className="p-4 space-y-4">
                 <button
                   onClick={() => {
-                    onNewChat();
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className="w-full p-3 border border-gray-300 hover:border-black transition-colors flex items-center space-x-2"
-                >
-                  <Home size={20} className="text-gray-700" />
-                  <span className="font-system">New Chat</span>
-                </button>
-                <button
-                  onClick={() => {
                     onOpenChatHistory();
                     setIsMobileMenuOpen(false);
                   }}
@@ -91,6 +81,16 @@ const Header: React.FC<HeaderProps> = ({ onOpenChatHistory, onNewChat }) => {
                 >
                   <MessageSquare size={20} className="text-gray-700" />
                   <span className="font-system">Chat History</span>
+                </button>
+                <button
+                  onClick={() => {
+                    onNewChat();
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="w-full p-3 border border-gray-300 hover:border-black transition-colors flex items-center space-x-2"
+                >
+                  <Home size={20} className="text-gray-700" />
+                  <span className="font-system">New Chat</span>
                 </button>
                 <button
                   onClick={() => {
