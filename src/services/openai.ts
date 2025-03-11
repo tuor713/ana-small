@@ -66,19 +66,12 @@ const TOOLS_CONFIG = {
 
 export async function sendChatRequest(
   messages: Message[],
-  systemPrompt: string,
+  _systemPrompt: string, // This parameter is now ignored
   apiKey: string | null,
   signal?: AbortSignal,
   connectorId?: string,
   userWarehouses?: { id: string; name: string; description: string; schema: string; }[]
 ): Promise<Message> {
-  const finalSystemPrompt = systemPrompt || DEFAULT_SYSTEM_PROMPT;
-  
-  const enabledToolsDescription = Object.entries(TOOLS_CONFIG)
-    .filter(([, config]) => config.enabled)
-    .map(([name]) => `'${name}'`)
-    .join(' and ');
-
   let warehouseContext = '';
   if (connectorId) {
     const sampleWarehouse = SAMPLE_WAREHOUSES.find(w => w.id === connectorId);
@@ -94,7 +87,7 @@ export async function sendChatRequest(
 
   const systemMessage = {
     role: 'system',
-    content: `${finalSystemPrompt}${warehouseContext}\n\nYou have access to the following tools:\n\n${
+    content: `${DEFAULT_SYSTEM_PROMPT}${warehouseContext}\n\nYou have access to the following tools:\n\n${
       Object.entries(TOOLS_CONFIG)
         .filter(([, config]) => config.enabled)
         .map(([name, config]) => 

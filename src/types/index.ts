@@ -37,7 +37,6 @@ export interface UserWarehouse extends RedshiftCredentials {
 
 export interface AppSettings {
   openaiApiKey: string;
-  systemPrompt: string;
   redshiftCredentials: RedshiftCredentials;
 }
 

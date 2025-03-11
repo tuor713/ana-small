@@ -93,5 +93,22 @@ export const SUGGESTED_QUERIES: SuggestedQuery[] = [
     warehouseId: 'SAMPLE-2',
     content: 'Which event types in 2008 show the highest average ticket quantity per order?',
     description: 'Event type order size'
+  },
+
+  // Rocket Launches queries
+  {
+    warehouseId: 'SAMPLE-3',
+    content: 'Which leading rocket organization conducts most successful global space launches?',
+    description: 'Top launch provider analysis'
+  },
+  {
+    warehouseId: 'SAMPLE-3',
+    content: 'What rocket carries the highest payload mass average to LEO?',
+    description: 'Payload capacity comparison'
+  },
+  {
+    warehouseId: 'SAMPLE-3',
+    content: 'How significantly did average rocket prices change over recent decades?',
+    description: 'Launch cost trends'
   }
 ];

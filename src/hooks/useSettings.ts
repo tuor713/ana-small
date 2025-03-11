@@ -1,6 +1,5 @@
 import { useLocalStorage } from './useLocalStorage';
 import { AppSettings, RedshiftCredentials } from '../types';
-import { DEFAULT_SYSTEM_PROMPT } from '../constants/systemPrompt';
 
 const DEFAULT_REDSHIFT_CREDENTIALS: RedshiftCredentials = {
   host: '',
@@ -15,7 +14,6 @@ const DEFAULT_REDSHIFT_CREDENTIALS: RedshiftCredentials = {
 
 const DEFAULT_SETTINGS: AppSettings = {
   openaiApiKey: '',
-  systemPrompt: DEFAULT_SYSTEM_PROMPT,
   redshiftCredentials: DEFAULT_REDSHIFT_CREDENTIALS
 };
 
