@@ -1,38 +1,56 @@
-import React, { useState } from 'react';
-import { MessageSquare, Home, MoreVertical, X } from 'lucide-react';
-import { logo } from '../constants/logo';
-import EnterpriseModal from './EnterpriseModal';
+import React, { useState } from "react";
+import { MessageSquare, Home, MoreVertical, X, Settings } from "lucide-react";
+import { logo } from "../constants/logo";
+import EnterpriseModal from "./EnterpriseModal";
 
 interface HeaderProps {
+  onOpenSettings: () => void;
   onOpenChatHistory: () => void;
   onNewChat: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ onOpenChatHistory, onNewChat }) => {
+const Header: React.FC<HeaderProps> = ({
+  onOpenSettings,
+  onOpenChatHistory,
+  onNewChat,
+}) => {
   const [isEnterpriseModalOpen, setIsEnterpriseModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
     <>
       <div className="sticky top-0 z-10 p-4 border-b border-ana-gray-border-light flex justify-between items-center bg-white">
-        <button 
+        <button
           onClick={onNewChat}
           className="flex items-center hover:opacity-80 transition-opacity"
         >
           <img src={logo} alt="Ana Logo" className="w-8 h-8" />
           <div className="flex flex-col ml-3">
-            <h1 className="font-system text-2xl font-bold text-gray-700">Ana</h1>
-            <span className="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs font-normal">Small</span>
+            <h1 className="font-system text-2xl font-bold text-gray-700">
+              Ana
+            </h1>
+            <span className="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs font-normal">
+              Small
+            </span>
           </div>
         </button>
-        
+
         {/* Desktop Menu */}
         <div className="hidden md:flex items-center space-x-2">
           <button
             onClick={() => setIsEnterpriseModalOpen(true)}
             className="ana-button-enterprise"
           >
-            <span className="font-system text-base font-normal">Compare Ana for Enterprise</span>
+            <span className="font-system text-base font-normal">
+              Compare Ana for Enterprise
+            </span>
+          </button>
+          <button
+            onClick={onOpenSettings}
+            className="p-2 border border-gray-300 hover:border-black transition-colors"
+            title="Settings"
+          >
+            <Settings size={20} className="text-gray-700" />
           </button>
           <button
             onClick={onOpenChatHistory}
@@ -98,14 +116,16 @@ const Header: React.FC<HeaderProps> = ({ onOpenChatHistory, onNewChat }) => {
                   }}
                   className="ana-button-enterprise w-full flex items-center justify-center"
                 >
-                  <span className="font-system text-base font-normal">Compare Ana for Enterprise</span>
+                  <span className="font-system text-base font-normal">
+                    Compare Ana for Enterprise
+                  </span>
                 </button>
               </div>
             </div>
           </div>
         )}
       </div>
-      <EnterpriseModal 
+      <EnterpriseModal
         isOpen={isEnterpriseModalOpen}
         onClose={() => setIsEnterpriseModalOpen(false)}
       />
