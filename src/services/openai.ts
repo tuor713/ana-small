@@ -1,14 +1,14 @@
-import { Message } from '../types';
-import { DEFAULT_SYSTEM_PROMPT } from '../constants/systemPrompt';
-import { sendChatRequest as apiSendChatRequest } from './api';
-import { SAMPLE_WAREHOUSES } from '../constants/sampleWarehouses';
+import { Message } from "../types";
+import { DEFAULT_SYSTEM_PROMPT } from "../constants/systemPrompt";
+import { sendChatRequest as apiSendChatRequest } from "./api";
+import { SAMPLE_WAREHOUSES } from "../constants/sampleWarehouses";
 
 const MAX_CONTENT_LENGTH = 25000;
-const TRIM_MESSAGE = '\n\n[Content has been trimmed due to length]';
+const TRIM_MESSAGE = "\n\n[Content has been trimmed due to length]";
 
 function trimContent(content: string | null | undefined): string {
   if (!content) {
-    return '';
+    return "";
   }
   if (content.length <= MAX_CONTENT_LENGTH) {
     return content;
@@ -18,50 +18,51 @@ function trimContent(content: string | null | undefined): string {
 
 // Tool configuration
 const TOOLS_CONFIG = {
-  'exec-sql': {
+  "exec-sql": {
     enabled: true,
     definition: {
       type: "function",
       function: {
         name: "exec-sql",
-        description: "Execute a SQL query against a Redshift PostgreSQL database",
+        description: "Execute a SQL query against a DuckDB database",
         parameters: {
           type: "object",
           properties: {
             code: {
               type: "string",
-              description: "The SQL query to execute"
-            }
+              description: "The SQL query to execute",
+            },
           },
-          required: ["code"]
-        }
-      }
-    }
+          required: ["code"],
+        },
+      },
+    },
   },
-  'exec-js': {
+  "exec-js": {
     enabled: false,
     definition: {
       type: "function",
       function: {
         name: "exec-js",
-        description: "Execute JavaScript code to analyze data and create visualizations",
+        description:
+          "Execute JavaScript code to analyze data and create visualizations",
         parameters: {
           type: "object",
           properties: {
             code: {
               type: "string",
-              description: "The JavaScript code to execute"
+              description: "The JavaScript code to execute",
             },
             data: {
               type: "string",
-              description: "JSON string of data to analyze"
-            }
+              description: "JSON string of data to analyze",
+            },
           },
-          required: ["code"]
-        }
-      }
-    }
-  }
+          required: ["code"],
+        },
+      },
+    },
+  },
 };
 
 export async function sendChatRequest(
@@ -70,15 +71,20 @@ export async function sendChatRequest(
   apiKey: string | null,
   signal?: AbortSignal,
   connectorId?: string,
-  userWarehouses?: { id: string; name: string; description: string; schema: string; }[]
+  userWarehouses?: {
+    id: string;
+    name: string;
+    description: string;
+    schema: string;
+  }[],
 ): Promise<Message> {
-  let warehouseContext = '';
+  let warehouseContext = "";
   if (connectorId) {
-    const sampleWarehouse = SAMPLE_WAREHOUSES.find(w => w.id === connectorId);
+    const sampleWarehouse = SAMPLE_WAREHOUSES.find((w) => w.id === connectorId);
     if (sampleWarehouse) {
       warehouseContext = `\n\nYou are working with "${sampleWarehouse.name}" (${sampleWarehouse.description}). USE THIS SCHEMA WHEN MAKING QUERIES: "${sampleWarehouse.schema}".`;
-    } else if (connectorId.startsWith('USER-')) {
-      const userWarehouse = userWarehouses?.find(w => w.id === connectorId);
+    } else if (connectorId.startsWith("USER-")) {
+      const userWarehouse = userWarehouses?.find((w) => w.id === connectorId);
       if (userWarehouse) {
         warehouseContext = `\n\nYou are working with "${userWarehouse.name}" (${userWarehouse.description}). USE THIS SCHEMA WHEN MAKING QUERIES: "${userWarehouse.schema}".`;
       }
@@ -86,21 +92,22 @@ export async function sendChatRequest(
   }
 
   const systemMessage = {
-    role: 'system',
-    content: `${DEFAULT_SYSTEM_PROMPT}${warehouseContext}\n\nYou have access to the following tools:\n\n${
-      Object.entries(TOOLS_CONFIG)
-        .filter(([, config]) => config.enabled)
-        .map(([name, config]) => 
-          `${config.definition.function.name} - ${config.definition.function.description}`
-        )
-        .join('\n')
-    }`
+    role: "system",
+    content: `${DEFAULT_SYSTEM_PROMPT}${warehouseContext}\n\nYou have access to the following tools:\n\n${Object.entries(
+      TOOLS_CONFIG,
+    )
+      .filter(([, config]) => config.enabled)
+      .map(
+        ([name, config]) =>
+          `${config.definition.function.name} - ${config.definition.function.description}`,
+      )
+      .join("\n")}`,
   };
 
   // Trim content of all messages
-  const trimmedMessages = messages.map(msg => ({
+  const trimmedMessages = messages.map((msg) => ({
     ...msg,
-    content: trimContent(msg.content)
+    content: trimContent(msg.content),
   }));
 
   const messagesToSend = [systemMessage, ...trimmedMessages];
@@ -110,7 +117,7 @@ export async function sendChatRequest(
     // Trim the response content as well
     return {
       ...response,
-      content: trimContent(response.content)
+      content: trimContent(response.content),
     };
   } catch (error) {
     throw error;

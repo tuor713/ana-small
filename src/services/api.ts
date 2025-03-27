@@ -1,87 +1,96 @@
-import { RedshiftCredentials, SqlQueryResult, Message } from '../types';
+import { RedshiftCredentials, SqlQueryResult, Message } from "../types";
 
-const API_URL = import.meta.env.VITE_BACKEND_API_URL || 'https://ana-small-worker.ahaym.workers.dev';
+const API_URL =
+  import.meta.env.VITE_BACKEND_API_URL ||
+  "http://localhost:8000" ||
+  "https://ana-small-worker.ahaym.workers.dev";
+
+const DB_API_URL =
+  import.meta.env.VITE_BACKEND_API_URL ||
+  "http://localhost:8000" ||
+  "https://ana-small-worker.ahaym.workers.dev";
 
 // Tool configuration
 const TOOLS_CONFIG = {
-  'exec-sql': {
+  "exec-sql": {
     enabled: true,
     definition: {
       type: "function",
       function: {
         name: "exec-sql",
-        description: "Execute a SQL query against a Redshift PostgreSQL database",
+        description: "Execute a SQL query against a DuckDB database",
         parameters: {
           type: "object",
           properties: {
             code: {
               type: "string",
-              description: "The SQL query to execute"
-            }
+              description: "The SQL query to execute",
+            },
           },
-          required: ["code"]
-        }
-      }
-    }
+          required: ["code"],
+        },
+      },
+    },
   },
-  'exec-js': {
-    enabled: false,
+  "exec-js": {
+    enabled: true,
     definition: {
       type: "function",
       function: {
         name: "exec-js",
-        description: "Execute JavaScript code to analyze data and create visualizations",
+        description:
+          "Execute JavaScript code to analyze data and create visualizations",
         parameters: {
           type: "object",
           properties: {
             code: {
               type: "string",
-              description: "The JavaScript code to execute"
+              description: "The JavaScript code to execute",
             },
             data: {
               type: "string",
-              description: "JSON string of data to analyze"
-            }
+              description: "JSON string of data to analyze",
+            },
           },
-          required: ["code"]
-        }
-      }
-    }
-  }
+          required: ["code"],
+        },
+      },
+    },
+  },
 };
 
 export async function executeQuery(
   code: string,
   credentials: RedshiftCredentials | { id: string } | null,
-  signal?: AbortSignal
+  signal?: AbortSignal,
 ): Promise<SqlQueryResult> {
   try {
-    const response = await fetch(`${API_URL}/api/query`, {
-      method: 'POST',
+    const response = await fetch(`${DB_API_URL}/api/query`, {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         code,
-        redshiftCredentials: credentials
+        redshiftCredentials: credentials,
       }),
-      signal
+      signal,
     });
 
     if (!response.ok) {
       const error = await response.text();
-      throw new Error(error || 'Failed to execute query');
+      throw new Error(error || "Failed to execute query");
     }
 
     const result = await response.json();
     return result;
   } catch (error) {
-    console.error('Query execution error:', error);
+    console.error("Query execution error:", error);
     return {
       columns: [],
       rows: [],
-      error: error instanceof Error ? error.message : 'Failed to execute query',
-      query: code
+      error: error instanceof Error ? error.message : "Failed to execute query",
+      query: code,
     };
   }
 }
@@ -118,50 +127,54 @@ interface ChatResponse {
 export async function sendChatRequest(
   messages: Message[],
   signal?: AbortSignal,
-  openaiApiKey?: string | null
+  openaiApiKey?: string | null,
 ): Promise<Message> {
   try {
     const enabledTools = Object.values(TOOLS_CONFIG)
-      .filter(config => config.enabled)
-      .map(config => config.definition);
+      .filter((config) => config.enabled)
+      .map((config) => config.definition);
 
     const response = await fetch(`${API_URL}/api/chat`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         openaiApiKey: openaiApiKey || null,
         model: "o3-mini",
         messages,
         tools: enabledTools,
-        tool_choice: "auto"
+        tool_choice: "auto",
       }),
-      signal
+      signal,
     });
 
     if (!response.ok) {
       const error = await response.text();
-      throw new Error(error || 'Failed to send chat request');
+      throw new Error(error || "Failed to send chat request");
     }
 
     const data: ChatResponse = await response.json();
-    
+
     if (!data.choices || data.choices.length === 0) {
-      throw new Error('No response choices available');
+      throw new Error("No response choices available");
     }
 
     const choice = data.choices[0];
     if (!choice.message) {
-      throw new Error('No message in response choice');
+      throw new Error("No message in response choice");
     }
 
+    console.log("Model response", choice);
+
     return {
-      role: choice.message.role as Message['role'],
+      role: choice.message.role as Message["role"],
       content: choice.message.content,
-      tool_calls: choice.message.tool_calls
+      tool_calls: choice.message.tool_calls,
     };
   } catch (error) {
-    throw error instanceof Error ? error : new Error('Failed to send chat request');
+    throw error instanceof Error
+      ? error
+      : new Error("Failed to send chat request");
   }
 }

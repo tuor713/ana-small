@@ -1,28 +1,33 @@
-import React, { useState, useRef } from 'react';
-import { Message, SqlQueryResult, JavaScriptExecutionResult, RedshiftCredentials } from './types';
-import { useSettings } from './hooks/useSettings';
-import { useChats } from './hooks/useChats';
-import { useUserWarehouses } from './hooks/useUserWarehouses';
-import { sendChatRequest } from './services/openai';
-import { executeSqlQuery } from './services/redshift';
-import { executeJavaScript } from './services/jsExecutor';
-import Header from './components/Header';
-import MessageList from './components/MessageList';
-import SettingsModal from './components/SettingsModal';
-import ChatHistoryModal from './components/ChatHistoryModal';
+import React, { useState, useRef } from "react";
+import {
+  Message,
+  SqlQueryResult,
+  JavaScriptExecutionResult,
+  RedshiftCredentials,
+} from "./types";
+import { useSettings } from "./hooks/useSettings";
+import { useChats } from "./hooks/useChats";
+import { useUserWarehouses } from "./hooks/useUserWarehouses";
+import { sendChatRequest } from "./services/openai";
+import { executeSqlQuery } from "./services/redshift";
+import { executeJavaScript } from "./services/jsExecutor";
+import Header from "./components/Header";
+import MessageList from "./components/MessageList";
+import SettingsModal from "./components/SettingsModal";
+import ChatHistoryModal from "./components/ChatHistoryModal";
 
 function App() {
   const [settings, setSettings] = useSettings();
-  const { 
-    chats, 
-    activeChat, 
+  const {
+    chats,
+    activeChat,
     isLoaded: chatsLoaded,
-    createChat, 
-    deleteChat, 
-    switchChat, 
+    createChat,
+    deleteChat,
+    switchChat,
     updateMessages,
     updateChatTitle,
-    updateChatConnector
+    updateChatConnector,
   } = useChats();
 
   const {
@@ -31,9 +36,9 @@ function App() {
     addWarehouse,
     updateWarehouse,
     deleteWarehouse,
-    getWarehouse
+    getWarehouse,
   } = useUserWarehouses();
-  
+
   const [isLoading, setIsLoading] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isChatHistoryOpen, setIsChatHistoryOpen] = useState(false);
@@ -41,38 +46,55 @@ function App() {
 
   const formatSqlResultAsTable = (result: SqlQueryResult): string => {
     if (result.error) return `Error: ${result.error}`;
-    if (result.rows.length === 0) return 'Query executed successfully. No results returned.';
-    
+    if (result.rows.length === 0)
+      return "Query executed successfully. No results returned.";
+
     const columnWidths: Record<string, number> = {};
-    result.columns.forEach(col => {
+    result.columns.forEach((col) => {
       columnWidths[col] = col.length;
-      result.rows.forEach(row => {
-        const cell = row[col]?.toString() || 'null';
+      result.rows.forEach((row) => {
+        const cell = row[col]?.toString() || "null";
         columnWidths[col] = Math.max(columnWidths[col], cell.length);
       });
     });
-    
-    const header = '| ' + result.columns.map(col => col.padEnd(columnWidths[col])).join(' | ') + ' |';
-    const separator = '|' + result.columns.map(col => '-'.repeat(columnWidths[col] + 2)).join('|') + '|';
-    const rows = result.rows.map(row =>
-      '| ' + result.columns.map(col => (row[col]?.toString() || 'null').padEnd(columnWidths[col])).join(' | ') + ' |'
+
+    const header =
+      "| " +
+      result.columns.map((col) => col.padEnd(columnWidths[col])).join(" | ") +
+      " |";
+    const separator =
+      "|" +
+      result.columns.map((col) => "-".repeat(columnWidths[col] + 2)).join("|") +
+      "|";
+    const rows = result.rows.map(
+      (row) =>
+        "| " +
+        result.columns
+          .map((col) =>
+            (row[col]?.toString() || "null").padEnd(columnWidths[col]),
+          )
+          .join(" | ") +
+        " |",
     );
-    return [header, separator, ...rows].join('\n');
+    return [header, separator, ...rows].join("\n");
   };
 
   const stopChat = () => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
-      
+
       if (activeChat) {
-        const updatedMessages = [...activeChat.messages, {
-          role: 'system',
-          content: 'Operation stopped by user.'
-        }];
+        const updatedMessages = [
+          ...activeChat.messages,
+          {
+            role: "system",
+            content: "Operation stopped by user.",
+          },
+        ];
         updateMessages(updatedMessages);
       }
-      
+
       setIsLoading(false);
     }
   };
@@ -85,7 +107,10 @@ function App() {
     setIsChatHistoryOpen(false);
   };
 
-  const handleWarehouseSelect = (id: string, credentials?: RedshiftCredentials) => {
+  const handleWarehouseSelect = (
+    id: string,
+    credentials?: RedshiftCredentials,
+  ) => {
     if (credentials) {
       const warehouse = addWarehouse(credentials);
       if (activeChat) {
@@ -111,42 +136,50 @@ function App() {
       return;
     }
 
-    const userMessage: Message = { role: 'user', content };
+    const userMessage: Message = { role: "user", content };
     const updatedMessages = [...activeChat.messages, userMessage];
     updateMessages(updatedMessages);
     setIsLoading(true);
 
     try {
       if (signal.aborted) {
-        throw new Error('Operation cancelled by user');
+        throw new Error("Operation cancelled by user");
       }
 
       const assistantResponse = await sendChatRequest(
-        updatedMessages, 
-        settings.systemPrompt, 
-        settings.openaiApiKey, 
+        updatedMessages,
+        settings.systemPrompt,
+        settings.openaiApiKey,
         signal,
         activeChat.connectorId,
-        warehouses
+        warehouses,
       );
-      
+
       if (signal.aborted) {
-        throw new Error('Operation cancelled by user');
+        throw new Error("Operation cancelled by user");
       }
-      
+
       const messagesWithResponse = [...updatedMessages, assistantResponse];
       updateMessages(messagesWithResponse);
-      
-      if (assistantResponse.tool_calls && assistantResponse.tool_calls.length > 0) {
-        await handleToolCalls(assistantResponse, messagesWithResponse, settings.openaiApiKey, signal);
+
+      if (
+        assistantResponse.tool_calls &&
+        assistantResponse.tool_calls.length > 0
+      ) {
+        await handleToolCalls(
+          assistantResponse,
+          messagesWithResponse,
+          settings.openaiApiKey,
+          signal,
+        );
       }
     } catch (error) {
-      console.error('Error:', error);
-      
+      console.error("Error:", error);
+
       if (!signal.aborted && activeChat) {
         const errorMessage: Message = {
-          role: 'system',
-          content: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`
+          role: "system",
+          content: `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
         };
         updateMessages([...updatedMessages, errorMessage]);
       }
@@ -159,159 +192,178 @@ function App() {
   };
 
   const handleToolCalls = async (
-    assistantMessage: Message, 
-    currentHistory: Message[], 
+    assistantMessage: Message,
+    currentHistory: Message[],
     apiKey: string | null,
-    signal: AbortSignal
+    signal: AbortSignal,
   ) => {
-    if (!assistantMessage.tool_calls || assistantMessage.tool_calls.length === 0 || !activeChat) return;
-    
+    if (
+      !assistantMessage.tool_calls ||
+      assistantMessage.tool_calls.length === 0 ||
+      !activeChat
+    )
+      return;
+
     for (const toolCall of assistantMessage.tool_calls) {
       if (signal.aborted) {
-        throw new Error('Operation cancelled by user');
+        throw new Error("Operation cancelled by user");
       }
-      
-      if (toolCall.function.name === 'exec-sql') {
+
+      if (toolCall.function.name === "exec-sql") {
         try {
           const args = JSON.parse(toolCall.function.arguments);
           const sqlQuery = args.code;
           console.log(`Executing SQL query: ${sqlQuery}`);
-          
+
           const executingMessage: Message = {
-            role: 'system',
-            content: `Executing SQL query:\n\`\`\`sql\n${sqlQuery}\n\`\`\``
+            role: "system",
+            content: `Executing SQL query:\n\`\`\`sql\n${sqlQuery}\n\`\`\``,
           };
           const messagesWithExecuting = [...currentHistory, executingMessage];
           updateMessages(messagesWithExecuting);
-          
+
           if (signal.aborted) {
-            throw new Error('Operation cancelled by user');
+            throw new Error("Operation cancelled by user");
           }
-          
+
           let credentials: RedshiftCredentials | { id: string } | null;
-          if (activeChat.connectorId.startsWith('USER-')) {
+          if (activeChat.connectorId.startsWith("USER-")) {
             const userWarehouse = getWarehouse(activeChat.connectorId);
             credentials = userWarehouse || null;
           } else {
             credentials = { id: activeChat.connectorId };
           }
-          
+
           const result = await executeSqlQuery(credentials, sqlQuery, signal);
-          
+
           if (signal.aborted) {
-            throw new Error('Operation cancelled by user');
+            throw new Error("Operation cancelled by user");
           }
-          
+
           const toolResponseMessage: Message = {
-            role: 'tool',
+            role: "tool",
             tool_call_id: toolCall.id,
-            name: 'exec-sql',
-            content: result.error ? `Error: ${result.error}` : formatSqlResultAsTable(result),
-            result // Store the full result object in the message
+            name: "exec-sql",
+            content: result.error
+              ? `Error: ${result.error}`
+              : formatSqlResultAsTable(result),
+            result, // Store the full result object in the message
           };
-          
-          const updatedMessages = currentHistory.filter(msg => msg !== executingMessage).concat(toolResponseMessage);
+
+          const updatedMessages = currentHistory
+            .filter((msg) => msg !== executingMessage)
+            .concat(toolResponseMessage);
           updateMessages(updatedMessages);
-          
+
           currentHistory = updatedMessages;
         } catch (error) {
           if (signal.aborted) {
-            throw new Error('Operation cancelled by user');
+            throw new Error("Operation cancelled by user");
           }
-          
-          console.error('Error executing SQL:', error);
+
+          console.error("Error executing SQL:", error);
           const errorResult: SqlQueryResult = {
             columns: [],
             rows: [],
-            error: error instanceof Error ? error.message : 'Unknown error'
+            error: error instanceof Error ? error.message : "Unknown error",
           };
           const errorToolResponse: Message = {
-            role: 'tool',
+            role: "tool",
             tool_call_id: toolCall.id,
-            name: 'exec-sql',
+            name: "exec-sql",
             content: `Error: ${errorResult.error}`,
-            result: errorResult
+            result: errorResult,
           };
           const updatedMessages = [...currentHistory, errorToolResponse];
           updateMessages(updatedMessages);
           currentHistory = updatedMessages;
         }
-      } else if (toolCall.function.name === 'exec-js') {
+      } else if (toolCall.function.name === "exec-js") {
         try {
           const args = JSON.parse(toolCall.function.arguments);
           const jsCode = args.code;
           const jsData = args.data;
           console.log(`Executing JavaScript code: ${jsCode}`);
-          
+
           const executingMessage: Message = {
-            role: 'system',
-            content: `Executing JavaScript code:\n\`\`\`javascript\n${jsCode}\n\`\`\``
+            role: "system",
+            content: `Executing JavaScript code:\n\`\`\`javascript\n${jsCode}\n\`\`\``,
           };
           const messagesWithExecuting = [...currentHistory, executingMessage];
           updateMessages(messagesWithExecuting);
-          
+
           if (signal.aborted) {
-            throw new Error('Operation cancelled by user');
+            throw new Error("Operation cancelled by user");
           }
-          
+
           let sqlResult = null;
           for (let i = currentHistory.length - 1; i >= 0; i--) {
             const msg = currentHistory[i];
-            if (msg.role === 'tool' && msg.name === 'exec-sql') {
+            if (msg.role === "tool" && msg.name === "exec-sql") {
               try {
-                if (!jsData && msg.content && !msg.content.startsWith('Error:')) {
-                  sqlResult = msg.content;
+                if (
+                  !jsData &&
+                  msg.result &&
+                  !msg.content.startsWith("Error:")
+                ) {
+                  console.log("Using SQL result for exec-js:", msg);
+                  sqlResult = JSON.stringify(msg.result.rows);
                 }
                 break;
               } catch (e) {
-                console.error('Error parsing SQL result:', e);
+                console.error("Error parsing SQL result:", e);
               }
             }
           }
-          
-          const result: JavaScriptExecutionResult = await executeJavaScript(jsCode, jsData || sqlResult);
-          
+
+          const result: JavaScriptExecutionResult = await executeJavaScript(
+            jsCode,
+            jsData || sqlResult,
+          );
+
           if (signal.aborted) {
-            throw new Error('Operation cancelled by user');
+            throw new Error("Operation cancelled by user");
           }
-          
-          let resultContent = '';
+
+          let resultContent = "";
           if (result.error) {
             resultContent = `Error: ${result.error}`;
           } else {
-            const visualizationsJson = result.visualizations 
-              ? JSON.stringify({ visualizations: result.visualizations }) 
-              : '';
-            
+            const visualizationsJson = result.visualizations
+              ? JSON.stringify({ visualizations: result.visualizations })
+              : "";
+
             if (result.output) {
               resultContent = `Output:\n\`\`\`\n${result.output}\n\`\`\`\n\n${visualizationsJson}`;
             } else {
               resultContent = visualizationsJson;
             }
           }
-          
+
           const toolResponseMessage: Message = {
-            role: 'tool',
+            role: "tool",
             tool_call_id: toolCall.id,
-            name: 'exec-js',
-            content: resultContent
+            name: "exec-js",
+            content: resultContent,
           };
-          
-          const updatedMessages = currentHistory.filter(msg => msg !== executingMessage).concat(toolResponseMessage);
+
+          const updatedMessages = currentHistory
+            .filter((msg) => msg !== executingMessage)
+            .concat(toolResponseMessage);
           updateMessages(updatedMessages);
-          
+
           currentHistory = updatedMessages;
         } catch (error) {
           if (signal.aborted) {
-            throw new Error('Operation cancelled by user');
+            throw new Error("Operation cancelled by user");
           }
-          
-          console.error('Error executing JavaScript:', error);
+
+          console.error("Error executing JavaScript:", error);
           const errorToolResponse: Message = {
-            role: 'tool',
+            role: "tool",
             tool_call_id: toolCall.id,
-            name: 'exec-js',
-            content: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`
+            name: "exec-js",
+            content: `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
           };
           const updatedMessages = [...currentHistory, errorToolResponse];
           updateMessages(updatedMessages);
@@ -319,40 +371,40 @@ function App() {
         }
       }
     }
-    
+
     if (signal.aborted) {
-      throw new Error('Operation cancelled by user');
+      throw new Error("Operation cancelled by user");
     }
-    
+
     try {
       const nextResponse = await sendChatRequest(
-        currentHistory, 
-        settings.systemPrompt, 
-        apiKey, 
+        currentHistory,
+        settings.systemPrompt,
+        apiKey,
         signal,
         activeChat.connectorId,
-        warehouses
+        warehouses,
       );
-      
+
       if (signal.aborted) {
-        throw new Error('Operation cancelled by user');
+        throw new Error("Operation cancelled by user");
       }
-      
+
       const updatedMessages = [...currentHistory, nextResponse];
       updateMessages(updatedMessages);
-      
+
       if (nextResponse.tool_calls && nextResponse.tool_calls.length > 0) {
         await handleToolCalls(nextResponse, updatedMessages, apiKey, signal);
       }
     } catch (error) {
       if (signal.aborted) {
-        throw new Error('Operation cancelled by user');
+        throw new Error("Operation cancelled by user");
       }
-      
-      console.error('Error getting next response:', error);
+
+      console.error("Error getting next response:", error);
       const errorMessage: Message = {
-        role: 'system',
-        content: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`
+        role: "system",
+        content: `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
       };
       updateMessages([...currentHistory, errorMessage]);
     }
@@ -371,18 +423,18 @@ function App() {
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      <Header 
-        onOpenSettings={() => setIsSettingsOpen(true)} 
+      <Header
+        onOpenSettings={() => setIsSettingsOpen(true)}
         onOpenChatHistory={() => setIsChatHistoryOpen(true)}
         onNewChat={handleNewChat}
       />
       <div className="flex flex-col flex-grow">
-        <MessageList 
-          messages={activeChat?.messages || []} 
+        <MessageList
+          messages={activeChat?.messages || []}
           isLoading={isLoading}
           onSendMessage={sendMessage}
           userWarehouses={warehouses}
-          selectedWarehouseId={activeChat?.connectorId || 'SAMPLE-1'}
+          selectedWarehouseId={activeChat?.connectorId || "SAMPLE-1"}
           onWarehouseSelect={handleWarehouseSelect}
           onWarehouseUpdate={updateWarehouse}
           onWarehouseDelete={deleteWarehouse}
