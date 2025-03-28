@@ -26,7 +26,7 @@ export const SAMPLE_WAREHOUSES: SampleWarehouse[] = [
     id: "SAMPLE-4",
     name: "Meteorite Landings",
     description:
-      "An extensive dataset of meteorite falls and finds across the globe in table `meteorite`, including detailed information about their mass, composition, classification, and discovery circumstances.",
+      "An extensive dataset of meteorite falls and finds across the globe in DuckDB table `meteorite`, including detailed information about their mass, composition, classification, and discovery circumstances.",
     schema: "main",
   },
   {
