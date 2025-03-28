@@ -204,6 +204,8 @@ function App() {
     )
       return;
 
+    var shouldChatAgain = true;
+
     for (const toolCall of assistantMessage.tool_calls) {
       if (signal.aborted) {
         throw new Error("Operation cancelled by user");
@@ -333,6 +335,12 @@ function App() {
               ? JSON.stringify({ visualizations: result.visualizations })
               : "";
 
+            if (result.visualizations) {
+              // Don't trigger another message after a visualization
+              // A bit ad-hoc => at some point we should ask the model if it's done.
+              shouldChatAgain = false;
+            }
+
             if (result.output) {
               resultContent = `Output:\n\`\`\`\n${result.output}\n\`\`\`\n\n${visualizationsJson}`;
             } else {
@@ -377,24 +385,26 @@ function App() {
     }
 
     try {
-      const nextResponse = await sendChatRequest(
-        currentHistory,
-        settings.systemPrompt,
-        apiKey,
-        signal,
-        activeChat.connectorId,
-        warehouses,
-      );
+      if (shouldChatAgain) {
+        const nextResponse = await sendChatRequest(
+          currentHistory,
+          settings.systemPrompt,
+          apiKey,
+          signal,
+          activeChat.connectorId,
+          warehouses,
+        );
 
-      if (signal.aborted) {
-        throw new Error("Operation cancelled by user");
-      }
+        if (signal.aborted) {
+          throw new Error("Operation cancelled by user");
+        }
 
-      const updatedMessages = [...currentHistory, nextResponse];
-      updateMessages(updatedMessages);
+        const updatedMessages = [...currentHistory, nextResponse];
+        updateMessages(updatedMessages);
 
-      if (nextResponse.tool_calls && nextResponse.tool_calls.length > 0) {
-        await handleToolCalls(nextResponse, updatedMessages, apiKey, signal);
+        if (nextResponse.tool_calls && nextResponse.tool_calls.length > 0) {
+          await handleToolCalls(nextResponse, updatedMessages, apiKey, signal);
+        }
       }
     } catch (error) {
       if (signal.aborted) {
