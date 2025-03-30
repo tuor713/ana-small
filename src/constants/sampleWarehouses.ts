@@ -36,4 +36,11 @@ export const SAMPLE_WAREHOUSES: SampleWarehouse[] = [
       "A detailed database of electric vehicle adoption in the United States, including purchase patterns, ownership statistics, charging infrastructure data, and vehicle specifications across different manufacturers and models.",
     schema: "vehicles",
   },
+  {
+    id: "TRINO-RISK",
+    name: "Market Risk",
+    description:
+      "A sample database of market risk data for a financial institution particularly risk on individual positions and account rollup data. The data is in Trino catalog `memory`, schema `default` with tables `risk` and `account`.",
+    schema: "default",
+  },
 ];
