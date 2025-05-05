@@ -1,10 +1,10 @@
 export interface Message {
-  role: 'user' | 'assistant' | 'system' | 'tool';
+  role: "user" | "assistant" | "system" | "tool";
   content: string;
   tool_calls?: ToolCallRequest[];
   tool_call_id?: string;
   name?: string;
-  result?: SqlQueryResult; // Add this to store the full result
+  result?: SqlQueryResult | any; // Store SQL or Malloy results
 }
 
 export interface ToolCallRequest {
@@ -42,6 +42,7 @@ export interface AppSettings {
 
 export interface SqlQueryResult {
   columns: string[];
+  types: string[];
   rows: any[];
   error?: string;
   connectionTested?: boolean;
@@ -49,7 +50,7 @@ export interface SqlQueryResult {
 }
 
 export interface ToolCall {
-  type: 'sql';
+  type: "sql";
   query: string;
   result?: SqlQueryResult;
 }
@@ -70,7 +71,7 @@ export interface JavaScriptExecutionResult {
 }
 
 export interface VisualizationResult {
-  type: 'chart' | 'plotly';
+  type: "chart" | "plotly";
   data: any;
   options?: any;
   id: string;

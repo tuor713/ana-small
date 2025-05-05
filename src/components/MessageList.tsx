@@ -107,6 +107,13 @@ const MessageList: React.FC<MessageListProps> = ({
                             </pre>
                           </div>
                         )}
+                        {toolCall.function.name === "exec-malloy" && (
+                          <div className="text-sm">
+                            <pre className="bg-gray-800 text-white p-2 overflow-x-auto">
+                              {JSON.parse(toolCall.function.arguments).query}
+                            </pre>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>

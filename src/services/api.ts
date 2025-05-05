@@ -1,4 +1,5 @@
 import { RedshiftCredentials, SqlQueryResult, Message } from "../types";
+import { TOOLS_CONFIG } from "../constants/tools";
 
 const API_URL =
   import.meta.env.VITE_BACKEND_API_URL ||
@@ -10,54 +11,7 @@ const DB_API_URL =
   "http://localhost:8000" ||
   "https://ana-small-worker.ahaym.workers.dev";
 
-// Tool configuration
-const TOOLS_CONFIG = {
-  "exec-sql": {
-    enabled: true,
-    definition: {
-      type: "function",
-      function: {
-        name: "exec-sql",
-        description: "Execute a SQL query against a DuckDB database",
-        parameters: {
-          type: "object",
-          properties: {
-            code: {
-              type: "string",
-              description: "The SQL query to execute",
-            },
-          },
-          required: ["code"],
-        },
-      },
-    },
-  },
-  "exec-js": {
-    enabled: true,
-    definition: {
-      type: "function",
-      function: {
-        name: "exec-js",
-        description:
-          "Execute JavaScript code to analyze data and create visualizations",
-        parameters: {
-          type: "object",
-          properties: {
-            code: {
-              type: "string",
-              description: "The JavaScript code to execute",
-            },
-            data: {
-              type: "string",
-              description: "JSON string of data to analyze",
-            },
-          },
-          required: ["code"],
-        },
-      },
-    },
-  },
-};
+// Using the shared TOOLS_CONFIG from constants/tools.ts
 
 export async function executeQuery(
   code: string,
@@ -141,7 +95,7 @@ export async function sendChatRequest(
       },
       body: JSON.stringify({
         openaiApiKey: openaiApiKey || null,
-        model: "o3-mini",
+        model: "o4-mini",
         messages,
         tools: enabledTools,
         tool_choice: "auto",

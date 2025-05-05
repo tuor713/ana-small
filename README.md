@@ -1,5 +1,5 @@
 # Ana Small
-Minimal text-to-SQL chat application for of https://github.com/TextQLLabs/ana-small. Changes made to:
+Minimal text-to-SQL chat application for https://github.com/TextQLLabs/ana-small. Changes made to:
 - Enable Javascript visualizations
 - Connect to different backend (DuckDB & Trino)
 

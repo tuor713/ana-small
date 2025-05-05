@@ -11,6 +11,7 @@ import { useUserWarehouses } from "./hooks/useUserWarehouses";
 import { sendChatRequest } from "./services/openai";
 import { executeSqlQuery } from "./services/redshift";
 import { executeJavaScript } from "./services/jsExecutor";
+import { runMalloyQuery } from "./services/malloy";
 import Header from "./components/Header";
 import MessageList from "./components/MessageList";
 import SettingsModal from "./components/SettingsModal";
@@ -77,6 +78,67 @@ function App() {
         " |",
     );
     return [header, separator, ...rows].join("\n");
+  };
+
+  const formatMalloyResultAsTable = (result: any): string => {
+    if (!result || !result.data || !result.data.queryData) {
+      return "No valid Malloy result data.";
+    }
+
+    try {
+      const data = result.data.queryData;
+
+      if (!Array.isArray(data) || data.length === 0) {
+        return "Query executed successfully. No results returned.";
+      }
+
+      // Extract column names from the first row's keys
+      const columns = Object.keys(data[0]);
+
+      if (columns.length === 0) {
+        return "Query executed successfully. No columns in result.";
+      }
+
+      // Calculate column widths for formatting
+      const columnWidths: Record<string, number> = {};
+      columns.forEach((col) => {
+        columnWidths[col] = col.length;
+        data.forEach((row) => {
+          const cell = row[col]?.toString() || "null";
+          columnWidths[col] = Math.max(columnWidths[col], cell.length);
+        });
+      });
+
+      // Create the table header
+      const header =
+        "| " +
+        columns.map((col) => col.padEnd(columnWidths[col])).join(" | ") +
+        " |";
+
+      // Create the separator row
+      const separator =
+        "|" +
+        columns.map((col) => "-".repeat(columnWidths[col] + 2)).join("|") +
+        "|";
+
+      // Create data rows
+      const rows = data.map(
+        (row) =>
+          "| " +
+          columns
+            .map((col) =>
+              (row[col]?.toString() || "null").padEnd(columnWidths[col]),
+            )
+            .join(" | ") +
+          " |",
+      );
+
+      // Return the formatted table
+      return [header, separator, ...rows].join("\n");
+    } catch (error) {
+      console.error("Error formatting Malloy result:", error);
+      return `Error formatting Malloy result: ${error instanceof Error ? error.message : "Unknown error"}\n\nRaw result:\n\`\`\`json\n${JSON.stringify(result, null, 2)}\n\`\`\``;
+    }
   };
 
   const stopChat = () => {
@@ -376,6 +438,48 @@ function App() {
           const updatedMessages = [...currentHistory, errorToolResponse];
           updateMessages(updatedMessages);
           currentHistory = updatedMessages;
+        }
+      } else if (toolCall.function.name === "exec-malloy") {
+        try {
+          const args = JSON.parse(toolCall.function.arguments);
+          const malloyQuery = args.query;
+          console.log(`Executing Malloy query: ${malloyQuery}`);
+
+          const executingMessage: Message = {
+            role: "system",
+            content: `Executing Malloy query:\n\`\`\`malloy\n${malloyQuery}\n\`\`\``,
+          };
+          const messagesWithExecuting = [...currentHistory, executingMessage];
+          updateMessages(messagesWithExecuting);
+
+          if (signal.aborted) throw new Error("Operation cancelled by user");
+          const result = await runMalloyQuery(malloyQuery);
+          if (signal.aborted) throw new Error("Operation cancelled by user");
+
+          const formattedResult = formatMalloyResultAsTable(result);
+          const toolResponseMessage: Message = {
+            role: "tool",
+            tool_call_id: toolCall.id,
+            name: "exec-malloy",
+            content: formattedResult,
+            result, // Store the full result object in the message
+          };
+          const updatedMessages2 = messagesWithExecuting
+            .filter((msg) => msg !== executingMessage)
+            .concat(toolResponseMessage);
+          updateMessages(updatedMessages2);
+          currentHistory = updatedMessages2;
+        } catch (error) {
+          if (signal.aborted) throw new Error("Operation cancelled by user");
+          console.error("Error executing Malloy query:", error);
+          const errorToolResponse: Message = {
+            role: "tool",
+            tool_call_id: toolCall.id,
+            name: "exec-malloy",
+            content: `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
+          };
+          updateMessages([...currentHistory, errorToolResponse]);
+          currentHistory = [...currentHistory, errorToolResponse];
         }
       }
     }

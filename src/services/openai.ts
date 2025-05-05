@@ -2,6 +2,7 @@ import { Message } from "../types";
 import { DEFAULT_SYSTEM_PROMPT } from "../constants/systemPrompt";
 import { sendChatRequest as apiSendChatRequest } from "./api";
 import { SAMPLE_WAREHOUSES } from "../constants/sampleWarehouses";
+import { TOOLS_CONFIG } from "../constants/tools";
 
 const MAX_CONTENT_LENGTH = 25000;
 const TRIM_MESSAGE = "\n\n[Content has been trimmed due to length]";
@@ -16,54 +17,7 @@ function trimContent(content: string | null | undefined): string {
   return content.substring(0, MAX_CONTENT_LENGTH) + TRIM_MESSAGE;
 }
 
-// Tool configuration
-const TOOLS_CONFIG = {
-  "exec-sql": {
-    enabled: true,
-    definition: {
-      type: "function",
-      function: {
-        name: "exec-sql",
-        description: "Execute a SQL query against a DuckDB database",
-        parameters: {
-          type: "object",
-          properties: {
-            code: {
-              type: "string",
-              description: "The SQL query to execute",
-            },
-          },
-          required: ["code"],
-        },
-      },
-    },
-  },
-  "exec-js": {
-    enabled: false,
-    definition: {
-      type: "function",
-      function: {
-        name: "exec-js",
-        description:
-          "Execute JavaScript code to analyze data and create visualizations",
-        parameters: {
-          type: "object",
-          properties: {
-            code: {
-              type: "string",
-              description: "The JavaScript code to execute",
-            },
-            data: {
-              type: "string",
-              description: "JSON string of data to analyze",
-            },
-          },
-          required: ["code"],
-        },
-      },
-    },
-  },
-};
+// Use the shared TOOLS_CONFIG from constants/tools.ts
 
 export async function sendChatRequest(
   messages: Message[],
